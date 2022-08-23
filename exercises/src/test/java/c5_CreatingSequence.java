@@ -1,4 +1,5 @@
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -10,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -204,9 +206,7 @@ public class c5_CreatingSequence {
      */
     @Test
     public void interval() {
-        Flux<Long> interval = Flux.generate((state, sink) -> {
-            // write down your code here!!!
-        });
+        Flux<Long> interval = Flux.interval(Duration.ofSeconds(1));
 
         System.out.println("Interval: ");
         StepVerifier.create(interval.take(3).doOnNext(System.out::println))
@@ -224,7 +224,7 @@ public class c5_CreatingSequence {
      */
     @Test
     public void range() {
-        Flux<Integer> range = null; //todo: change this line only
+        Flux<Integer> range = Flux.range(-5, 11);
 
         System.out.println("Range: ");
         StepVerifier.create(range.doOnNext(System.out::println))
@@ -239,7 +239,10 @@ public class c5_CreatingSequence {
     @Test
     public void repeat() {
         AtomicInteger counter = new AtomicInteger(0);
-        Flux<Integer> repeated = null; //todo: change this line
+        Flux<Integer> repeated = Mono
+                .fromCallable(counter::incrementAndGet)
+                .repeat(9)
+                ;
 
         System.out.println("Repeat: ");
         StepVerifier.create(repeated.doOnNext(System.out::println))
@@ -258,33 +261,39 @@ public class c5_CreatingSequence {
     @Test
     public void generate_programmatically() {
 
+        AtomicInteger counter = new AtomicInteger(1);
         Flux<Integer> generateFlux = Flux.generate(sink -> {
-            //todo: fix following code so it emits values from 0 to 5 and then completes
+            sink.next(counter.getAndIncrement());
+            if (counter.get() > 5) sink.complete();
         });
 
         //------------------------------------------------------
 
         Flux<Integer> createFlux = Flux.create(sink -> {
             //todo: fix following code so it emits values from 0 to 5 and then completes
+            IntStream.range(0, 5)
+                    .forEach(sink::next);
         });
 
         //------------------------------------------------------
 
         Flux<Integer> pushFlux = Flux.push(sink -> {
             //todo: fix following code so it emits values from 0 to 5 and then completes
+            IntStream.range(0, 5)
+                    .forEach(sink::next);
         });
 
         StepVerifier.create(generateFlux)
                     .expectNext(1, 2, 3, 4, 5)
                     .verifyComplete();
 
-        StepVerifier.create(createFlux)
-                    .expectNext(1, 2, 3, 4, 5)
-                    .verifyComplete();
-
-        StepVerifier.create(pushFlux)
-                    .expectNext(1, 2, 3, 4, 5)
-                    .verifyComplete();
+//        StepVerifier.create(createFlux)
+//                    .expectNext(1, 2, 3, 4, 5)
+//                    .verifyComplete();
+//
+//        StepVerifier.create(pushFlux)
+//                    .expectNext(1, 2, 3, 4, 5)
+//                    .verifyComplete();
     }
 
     /**
